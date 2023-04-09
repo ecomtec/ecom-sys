@@ -16,7 +16,7 @@ func main() {
 	router.DELETE("/users/:id", deleteUserHandler)
 
 	// Start the server
-	router.Run(":80")
+	router.Run(":8081")
 	router.Routes()
 }
 
