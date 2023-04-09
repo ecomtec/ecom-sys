@@ -16,7 +16,8 @@ func main() {
 	router.DELETE("/users/:id", deleteUserHandler)
 
 	// Start the server
-	router.Run(":8080")
+	router.Run(":80")
+	router.Routes()
 }
 
 func helloHandler(c *gin.Context) {
