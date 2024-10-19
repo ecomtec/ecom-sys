@@ -3,13 +3,32 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
 	// Create a new Gin router
 	router := gin.Default()
+
+	// // Configure CORS middleware
+	// router.Use(cors.New(cors.Config{
+	// 	AllowOrigins:     []string{"http://localhost:3000"}, // Replace with your allowed origin(s)
+	// 	AllowMethods:     []string{"GET", "POST"},
+	// 	AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
+	// 	AllowCredentials: true,
+	// }))
+
+	router.Use(Middleware("*", "ecom-system"))
+
+	// Define a GET endpoint
+	router.GET("/get-endpoint", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "GET request successful",
+		})
+	})
 
 	// Define your API routes
 	router.GET("/hello", helloHandler)
@@ -105,4 +124,38 @@ func updateUserHandler(c *gin.Context) {
 func deleteUserHandler(c *gin.Context) {
 	// Delete a user by ID
 	// ...
+}
+
+const (
+	MerchantPortalExcludeURL = "http://localhost:3000"
+)
+
+// Middleware handles cross origin request access
+func Middleware(origins, service string) gin.HandlerFunc {
+	if strings.TrimSpace(origins) == "" {
+		logrus.Fatal("CORS origin must be provided for server")
+	}
+
+	return func(c *gin.Context) {
+		reqOrigin := c.Request.Header.Get("Origin")
+		if reqOrigin == MerchantPortalExcludeURL {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", MerchantPortalExcludeURL)
+		} else {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", origins)
+		}
+		c.Writer.Header().Set("Access-Control-Max-Age", "86400")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, PATCH")
+		c.Writer.Header().Set(
+			"Access-Control-Allow-Headers",
+			"Access-Control-Allow-Origin, Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization",
+		)
+		c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusOK)
+		} else {
+			c.Next()
+		}
+	}
 }
